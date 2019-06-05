@@ -1,13 +1,8 @@
-select rm.RoomCode, 
-round(sum((case when datediff(CURDATE(), rv.Checkout) <= 180 
-    and datediff(CURDATE(), rv.Checkout) >= 0
-                then datediff(rv.Checkout, rv.Checkin) 
-                else 0 
-                end) - 
-                (case when datediff(CURDATE(), rv.Checkin) > 180 and datediff(CURDATE(), rv.Checkout) <= 180
-                then datediff(CURDATE(), rv.Checkin) - 180
-                else 0
-                end)
-                ) / 180, 2) Popularity 
-from lab7_rooms rm join lab7_reservations rv on rm.RoomCode = rv.Room
-group by rm.RoomCode;
+SELECT rm.RoomCode, Round(Sum((CASE WHEN Datediff(Curdate(), rv.Checkout) <= 180 
+AND Datediff(Curdate(), rv.Checkout) >= 0 THEN Datediff(rv.Checkout, rv.Checkin) 
+ELSE 0 END) - (CASE WHEN Datediff(Curdate(), rv.Checkin) > 180 AND Datediff( 
+Curdate(), rv.Checkout) <= 180 AND Datediff(Curdate(), rv.Checkout) >= 0 THEN 
+Datediff(Curdate(), rv.Checkin) - 180 ELSE 0 END) ) / 180, 2) Popularity 
+FROM   lab7_rooms rm 
+       JOIN lab7_reservations rv 
+         ON rm.RoomCode = rv.Room GROUP BY rm.RoomCode;
