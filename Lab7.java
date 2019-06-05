@@ -49,14 +49,14 @@ public class Lab7 {
 	}
 
 	private static void getInputs() {
-		System.out.print("Please enter a command: ");
+		System.out.print("Please enter a command (or type 'Help' or 'Quit'): ");
 		Scanner scanner = new Scanner(System.in);
 		String input = scanner.nextLine().trim();
 
 		while (!(input.equals("Q") || input.equals("Quit"))) {
 		   produceAnswer(input);
 		   System.out.println();
-		   System.out.print("Please enter a command: ");
+		   System.out.print("Please enter a command (or type 'Help' or 'Quit'): ");
 		   input = scanner.nextLine().trim();
 		}
 
@@ -66,29 +66,49 @@ public class Lab7 {
 	}
 
 	private static void produceAnswer(String input) {
-		System.out.println("You entered '" + input + "'");
 		switch (input.toLowerCase()) {
 			case "help":
+			case "h":
 				printHelp();
+				break;
 			case "R1":
 				System.out.println("Performing R1");
-			case "R1":
-				System.out.println("Performing R1");
-			case "R1":
-				System.out.println("Performing R1");
-			case "R1":
-				System.out.println("Performing R1");
-			case "R1":
-				System.out.println("Performing R1");
-			case "R1":
-				System.out.println("Performing R1");
+				break;
+			case "R2":
+				System.out.println("Performing R2");
+				break;
+			case "R3":
+				System.out.println("Performing R3");
+				break;
+			case "R4":
+				System.out.println("Performing R4");
+				break;
+			case "R5":
+				System.out.println("Performing R5");
+				break;
+			case "R6":
+				System.out.println("Performing R6");
+				break;
 			default:
 				System.out.println("Wrongly formatted expression");
+				break;
 		}
 	}
 
 	private static void printHelp() {
+		String helpStr = "USAGE OF THE INN DATABASE\n......................................\n" +
+			"• 'R1': Rooms and Rates.\n\tWhen this option is selected, the system will output a list of rooms to the user sorted by popularity (highest to lowest)\n" +
+			"• 'R2': Reservations.\n\tWhen this option is selected, the system will produce a numbered list of matching rooms available for booking, along with\n\t" +
+				"a prompt to allow booking by option number. If no exact matches are found, the system will suggest 5 possibilities for different rooms or dates.\n" +
+			"• 'R3': Reservation Change.\n\tWhen this option is selected, the system will allow the user to make changes to an existing reservation, accepting from\n\t" +
+				"the user a reservation code and new values for the reservation.\n" +
+			"• 'R4': Reservation Cancellation.\n\tWhen this option is selected, the system will allow the user to cancel an existing reservation, accepting from the user a\n\t" +
+				"reservation code, confirming the cancellation, then removing the reservation record from the database.\n" +
+			"• 'R5': Detailed Reservation Information.\n\tWhen this option is selected, the system will present the user with a search prompt or form that allows them to enter any combination of the fields.\n" +
+			"• 'R6': Revenue.\n\tWhen this option is selected, the system shall provide a month-by-month overview of revenue for an entire year.\n" +
+			"......................................\n";
 
+		System.out.println(helpStr);
 	}
 
 	// Demo1 - Establish JDBC connection, execute DDL statement
@@ -127,7 +147,7 @@ public class Lab7 {
 	}
 
 	private static void setupDB() throws SQLException {
-		System.out.println("..... Setting up Database .....");
+		System.out.println("........ Setting up Database .........");
 		try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
 				System.getenv("L7_JDBC_PW"))) {
 
