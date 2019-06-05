@@ -36,11 +36,59 @@ export L7_JDBC_PW=
 public class Lab7 {
 	public static void main(String[] args) {
 		try {
-			Lab7 l = new Lab7();
-			l.demo2();
+			setupDB();
+			welcomeUser();
+			getInputs();
 		} catch (SQLException e) {
 			System.err.println("SQLException: " + e.getMessage());
 		}
+	}
+
+	private static void welcomeUser() {
+		System.out.println("\nWelcome to the Inn Database!\nType in 'Help' for more information on how to use the program\n......................................\n");
+	}
+
+	private static void getInputs() {
+		System.out.print("Please enter a command: ");
+		Scanner scanner = new Scanner(System.in);
+		String input = scanner.nextLine().trim();
+
+		while (!(input.equals("Q") || input.equals("Quit"))) {
+		   produceAnswer(input);
+		   System.out.println();
+		   System.out.print("Please enter a command: ");
+		   input = scanner.nextLine().trim();
+		}
+
+		// if user enters Q or Quit, the while loop closes
+		System.out.println("Goodbye! Thank you for using our Inn Database");
+		scanner.close();
+	}
+
+	private static void produceAnswer(String input) {
+		System.out.println("You entered '" + input + "'");
+		switch (input.toLowerCase()) {
+			case "help":
+				printHelp();
+			case "R1":
+				System.out.println("Performing R1");
+			case "R1":
+				System.out.println("Performing R1");
+			case "R1":
+				System.out.println("Performing R1");
+			case "R1":
+				System.out.println("Performing R1");
+			case "R1":
+				System.out.println("Performing R1");
+			case "R1":
+				System.out.println("Performing R1");
+			default:
+				System.out.println("Wrongly formatted expression");
+		}
+	}
+
+	private static void printHelp() {
+
 	}
 
 	// Demo1 - Establish JDBC connection, execute DDL statement
@@ -76,6 +124,61 @@ public class Lab7 {
 			// Step 6: (omitted in this example) Commit or rollback transaction
 		}
 		// Step 7: Close connection (handled by try-with-resources syntax)
+	}
+
+	private static void setupDB() throws SQLException {
+		System.out.println("..... Setting up Database .....");
+		try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
+				System.getenv("L7_JDBC_PW"))) {
+
+					String dropRoomsSql = "DROP TABLE IF EXISTS lab7_rooms;";
+
+					String dropReservationsSql = "DROP TABLE IF EXISTS lab7_reservations;";
+
+					String roomsSql = "CREATE TABLE IF NOT EXISTS lab7_rooms (" +
+			  			"RoomCode char(5) PRIMARY KEY, " +
+			  			"RoomName varchar(30) NOT NULL, " +
+			  			"Beds int(11) NOT NULL, " +
+			  			"bedType varchar(8) NOT NULL, " +
+			  			"maxOcc int(11) NOT NULL, " +
+			  			"basePrice DECIMAL(6,2) NOT NULL, " +
+			  			"decor varchar(20) NOT NULL, " +
+			  			"UNIQUE (RoomName)" +
+						");";
+
+					String reservationsSql = "CREATE TABLE IF NOT EXISTS lab7_reservations (" +
+  						"CODE int(11) PRIMARY KEY, " +
+  						"Room char(5) NOT NULL, " +
+  						"CheckIn date NOT NULL, " +
+  						"Checkout date NOT NULL, " +
+  						"Rate DECIMAL(6,2) NOT NULL, " +
+  						"LastName varchar(15) NOT NULL, " +
+  						"FirstName varchar(15) NOT NULL, " +
+  						"Adults int(11) NOT NULL, " +
+  						"Kids int(11) NOT NULL, " +
+  						"UNIQUE (Room, CheckIn), " +
+  						"UNIQUE (Room, Checkout), " +
+  						"FOREIGN KEY (Room) REFERENCES lab7_rooms (RoomCode)" +
+						");";
+
+					String roomsInsertSql = "INSERT INTO lab7_rooms SELECT * FROM INN.rooms;";
+
+					String reservationsInsertSql = "INSERT INTO lab7_reservations SELECT CODE, Room, " +
+   					"DATE_ADD(CheckIn, INTERVAL 9 YEAR), " +
+   					"DATE_ADD(Checkout, INTERVAL 9 YEAR), " +
+   					"Rate, LastName, FirstName, Adults, Kids FROM INN.reservations;";
+
+					Statement stmt = conn.createStatement();
+					stmt.addBatch(dropReservationsSql);
+					stmt.addBatch(dropRoomsSql);
+					stmt.addBatch(roomsSql);
+					stmt.addBatch(reservationsSql);
+					stmt.addBatch(roomsInsertSql);
+					stmt.addBatch(reservationsInsertSql);
+					stmt.executeBatch();
+
+					System.out.println("Successfully setup Room and Reservations tables");
+				}
 	}
 
 	// Demo2 - Establish JDBC connection, execute SELECT query, read & print result
