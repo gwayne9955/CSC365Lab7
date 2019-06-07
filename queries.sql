@@ -1,3 +1,4 @@
+-- R1
 with LengthOfStay as 
     (select Room, max(CheckIn) CI, max(CheckOut) RecentCO, DATEDIFF(max(CheckOut), max(CheckIn)) LengthPrev
         from lab7_reservations
@@ -32,3 +33,8 @@ with LengthOfStay as
         inner join LengthOfStay on LengthOfStay.Room=NextDay.Room
         order by Popularity desc, NextAvailable, LengthPrev desc, RecentCO
                          
+-- R2
+
+-- R5
+
+-- R6
