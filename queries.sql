@@ -34,7 +34,26 @@ with LengthOfStay as
         order by Popularity desc, NextAvailable, LengthPrev desc, RecentCO
                          
 -- R2
+SET @row_number = 0;
+select (@row_number:=@row_number + 1) as ResultNumber, RoomCode, RoomName from lab7_rooms
+    where
+        maxOcc <= (inOcc) and
+        bedType = (inType) and
+        decor = (inDecor) and
+        basePrice <= (inRate) and 
+        Beds <= (minBeds) and
+        RoomCode not in 
+            (select Room from lab7_reservations
+                where
+                    CheckIn > (CHECKIN) and (CHECKIN) < "2019-1-28"
+                    group by Room
+            )
 
 -- R5
+select * from lab7_reservations where
+    FirstName like "(inFirst)%" and
+    LastName like "(inLast)%" and
+    Room like "(inRoom)%" and
+    CODE like "(inCode)%"
 
 -- R6
