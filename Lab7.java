@@ -431,9 +431,9 @@ public class Lab7 {
                     + "DATE_ADD(CheckIn, INTERVAL 9 YEAR), " + "DATE_ADD(Checkout, INTERVAL 9 YEAR), "
                     + "Rate, LastName, FirstName, Adults, Kids FROM INN.reservations;";
 
-            String dropReservationsOverlapPreventionInsertTrigger = "DROP TRIGGER IF EXISTS prevent_overlap_reservations_update;";
+            String dropReservationsOverlapPreventionInsertTrigger = "DROP TRIGGER IF EXISTS prevent_overlap_reservations_insert;";
 
-            String reservationsOverlapPreventionInsertTrigger = "CREATE TRIGGER prevent_overlap_reservations_update BEFORE INSERT ON lab7_reservations "
+            String reservationsOverlapPreventionInsertTrigger = "CREATE TRIGGER prevent_overlap_reservations_insert BEFORE INSERT ON lab7_reservations "
                     + "FOR EACH ROW " + "BEGIN " + "IF (EXISTS (SELECT Code FROM lab7_reservations R "
                     + "WHERE R.Room = NEW.Room AND NOT NEW.CheckOut <= R.CheckIn AND NOT NEW.CheckIn >= R.CheckOut)) "
                     + "THEN " + "SIGNAL SQLSTATE '45000' "
