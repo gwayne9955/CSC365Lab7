@@ -44,6 +44,7 @@ public class Lab7 {
         // if user enters Q or Quit, the while loop closes
         System.out.println("Goodbye! Thank you for using our Inn Database");
         scanner.close();
+        System.exit(0);
     }
 
     private static void produceAnswer(String input) throws SQLException {
@@ -59,7 +60,7 @@ public class Lab7 {
             System.out.println("Performing R2");
             break;
         case "r3":
-            System.out.println("Performing R3");
+            r3();
             break;
         case "r4":
             r4();
@@ -149,12 +150,110 @@ public class Lab7 {
                     row.add(rs.getString("RecentCO"));
 
                     rowsList.add(row);
-
-                    // System.out.format("%s %s %d %s %d ($%.2f) %s ($%.2f) %s %d %s %n", roomCode,
-                    // roomName, (int) beds, bedType, (int) maxOcc, basePrice, decor, popularity,
-                    // nextAvailable, (int) lengthPrev, recentCO);
                 }
                 System.out.println(tableGenerator.generateTable(headersList, rowsList));
+            }
+        }
+    }
+
+    private static void r3() throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        List<Object> params = new ArrayList<Object>();
+        int paramCount = 0;
+        StringBuilder sb = new StringBuilder("UPDATE lab7_reservations SET");
+
+        System.out.print("\nPlease enter a Reservation code for updating the reservation: ");
+        String resCode = scanner.nextLine().trim();
+        while (resCode.equalsIgnoreCase("")) {
+            System.out.print("Sorry, please enter a Reservation code for updating the reservation: ");
+            resCode = scanner.nextLine().trim();
+        }
+
+        System.out.print("\nPlease enter a First name (or leave blank for 'no change'): ");
+        String firstName = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(firstName)) {
+            paramCount++;
+            sb.append(" FirstName = ?");
+            params.add(firstName);
+        }
+
+        System.out.print("\nPlease enter a Last name (or leave blank for 'no change'): ");
+        String lastName = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(lastName)) {
+            paramCount++;
+            if (paramCount > 1)
+                sb.append(",");
+            else
+                sb.append(" LastName = ?");
+            params.add(lastName);
+        }
+
+        System.out.print("\nPlease enter a CheckIn date (or leave blank for 'no change'): ");
+        String checkIn = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(checkIn)) {
+            paramCount++;
+            if (paramCount > 1)
+                sb.append(",");
+            else
+                sb.append(" CheckIn = ?");
+            params.add(checkIn);
+        }
+
+        System.out.print("\nPlease enter a CheckOut date (or leave blank for 'no change'): ");
+        String checkOut = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(checkOut)) {
+            paramCount++;
+            if (paramCount > 1)
+                sb.append(",");
+            else
+                sb.append(" CheckOut = ?");
+            params.add(checkOut);
+        }
+
+        System.out.print("\nPlease enter the Number of children (or leave blank for 'no change'): ");
+        String numChildren = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(numChildren)) {
+            paramCount++;
+            if (paramCount > 1)
+                sb.append(",");
+            else
+                sb.append(" Kids = ?");
+            params.add(numChildren);
+        }
+
+        System.out.print("\nPlease enter the Number of adults (or leave blank for 'no change'): ");
+        String numAdults = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(numAdults)) {
+            paramCount++;
+            if (paramCount > 1)
+                sb.append(",");
+            else
+                sb.append(" Adults = ?");
+            params.add(numAdults);
+        }
+
+        if (paramCount == 0) {
+            System.out.println("No entries updated");
+            return;
+        }
+
+        sb.append(" WHERE CODE = ?");
+        params.add(resCode);
+
+        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
+                System.getenv("L7_JDBC_PW"))) {
+            try (PreparedStatement pstmt = conn.prepareStatement(sb.toString())) {
+                int i = 1;
+                for (Object p : params) {
+                    pstmt.setObject(i++, p);
+                }
+
+                int rowCount = pstmt.executeUpdate();
+                if (rowCount > 0) {
+                    System.out.println("Updated reservation " + resCode + ", " + rowCount + " row(s) affected");
+                } else {
+                    System.out.println("No matching records were found with reservation code " + resCode);
+                }
             }
         }
     }
@@ -303,42 +402,6 @@ public class Lab7 {
                 }
             }
         }
-
-    }
-
-    // Demo1 - Establish JDBC connection, execute DDL statement
-    private void demo1() throws SQLException {
-
-        // Step 0: Load MySQL JDBC Driver
-        // No longer required as of JDBC 2.0 / Java 6
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            System.out.println("MySQL JDBC Driver loaded");
-        } catch (ClassNotFoundException ex) {
-            System.err.println("Unable to load JDBC Driver");
-            System.exit(-1);
-        }
-
-        // Step 1: Establish connection to RDBMS
-        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
-                System.getenv("L7_JDBC_PW"))) {
-            // Step 2: Construct SQL statement
-            String sql = "ALTER TABLE hp_goods ADD COLUMN AvailUntil DATE";
-
-            // Step 3: (omitted in this example) Start transaction
-
-            try (Statement stmt = conn.createStatement()) {
-
-                // Step 4: Send SQL statement to DBMS
-                boolean exRes = stmt.execute(sql);
-
-                // Step 5: Handle results
-                System.out.format("Result from ALTER: %b %n", exRes);
-            }
-
-            // Step 6: (omitted in this example) Commit or rollback transaction
-        }
-        // Step 7: Close connection (handled by try-with-resources syntax)
     }
 
     private static void setupDB() throws SQLException {
@@ -368,6 +431,24 @@ public class Lab7 {
                     + "DATE_ADD(CheckIn, INTERVAL 9 YEAR), " + "DATE_ADD(Checkout, INTERVAL 9 YEAR), "
                     + "Rate, LastName, FirstName, Adults, Kids FROM INN.reservations;";
 
+            String dropReservationsOverlapPreventionInsertTrigger = "DROP TRIGGER IF EXISTS prevent_overlap_reservations_update;";
+
+            String reservationsOverlapPreventionInsertTrigger = "CREATE TRIGGER prevent_overlap_reservations_update BEFORE INSERT ON lab7_reservations "
+                    + "FOR EACH ROW " + "BEGIN " + "IF (EXISTS (SELECT Code FROM lab7_reservations R "
+                    + "WHERE R.Room = NEW.Room AND NOT NEW.CheckOut <= R.CheckIn AND NOT NEW.CheckIn >= R.CheckOut)) "
+                    + "THEN " + "SIGNAL SQLSTATE '45000' "
+                    + "SET MESSAGE_TEXT = 'ERROR: THERE EXISTS A CURRENT RESERVATION WITH THAT CONFLICTS WITH THIS DATE RANGE'; "
+                    + "END IF; " + "END;";
+
+            String dropReservationsOverlapPreventionUpdateTrigger = "DROP TRIGGER IF EXISTS prevent_overlap_reservations_update;";
+
+            String reservationsOverlapPreventionUpdateTrigger = "CREATE TRIGGER prevent_overlap_reservations_update BEFORE UPDATE ON lab7_reservations "
+                    + "FOR EACH ROW " + "BEGIN " + "IF (EXISTS (SELECT Code FROM lab7_reservations R "
+                    + "WHERE R.Room = NEW.Room AND R.Code != NEW.Code AND NOT NEW.CheckOut <= R.CheckIn AND NOT NEW.CheckIn >= R.CheckOut)) "
+                    + "THEN " + "SIGNAL SQLSTATE '45000' "
+                    + "SET MESSAGE_TEXT = 'ERROR: THERE EXISTS A CURRENT RESERVATION WITH THAT CONFLICTS WITH THIS DATE RANGE'; "
+                    + "END IF; " + "END;";
+
             Statement stmt = conn.createStatement();
             stmt.addBatch(dropReservationsSql);
             stmt.addBatch(dropRoomsSql);
@@ -375,156 +456,13 @@ public class Lab7 {
             stmt.addBatch(reservationsSql);
             stmt.addBatch(roomsInsertSql);
             stmt.addBatch(reservationsInsertSql);
+            stmt.addBatch(dropReservationsOverlapPreventionInsertTrigger);
+            stmt.addBatch(reservationsOverlapPreventionInsertTrigger);
+            stmt.addBatch(dropReservationsOverlapPreventionUpdateTrigger);
+            stmt.addBatch(reservationsOverlapPreventionUpdateTrigger);
             stmt.executeBatch();
 
             System.out.println("Successfully setup Room and Reservations tables\n");
-        }
-    }
-
-    // Demo2 - Establish JDBC connection, execute SELECT query, read & print result
-    private void demo2() throws SQLException {
-
-        // Step 1: Establish connection to RDBMS
-        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
-                System.getenv("L7_JDBC_PW"))) {
-            // Step 2: Construct SQL statement
-            String sql = "SELECT * FROM hp_goods";
-
-            // Step 3: (omitted in this example) Start transaction
-
-            // Step 4: Send SQL statement to DBMS
-            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-
-                // Step 5: Receive results
-                while (rs.next()) {
-                    String flavor = rs.getString("Flavor");
-                    String food = rs.getString("Food");
-                    float price = rs.getFloat("price");
-                    System.out.format("%s %s ($%.2f) %n", flavor, food, price);
-                }
-            }
-
-            // Step 6: (omitted in this example) Commit or rollback transaction
-        }
-        // Step 7: Close connection (handled by try-with-resources syntax)
-    }
-
-    // Demo3 - Establish JDBC connection, execute DML query (UPDATE)
-    // -------------------------------------------
-    // Never (ever) write database code like this!
-    // -------------------------------------------
-    private void demo3() throws SQLException {
-
-        // Step 1: Establish connection to RDBMS
-        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
-                System.getenv("L7_JDBC_PW"))) {
-            // Step 2: Construct SQL statement
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Enter a flavor: ");
-            String flavor = scanner.nextLine();
-            System.out.format("Until what date will %s be available (YYYY-MM-DD)? ", flavor);
-            String availUntilDate = scanner.nextLine();
-
-            // -------------------------------------------
-            // Never (ever) write database code like this!
-            // -------------------------------------------
-            String updateSql = "UPDATE hp_goods SET AvailUntil = '" + availUntilDate + "' " + "WHERE Flavor = '"
-                    + flavor + "'";
-
-            // Step 3: (omitted in this example) Start transaction
-
-            try (Statement stmt = conn.createStatement()) {
-
-                // Step 4: Send SQL statement to DBMS
-                int rowCount = stmt.executeUpdate(updateSql);
-
-                // Step 5: Handle results
-                System.out.format("Updated %d records for %s pastries%n", rowCount, flavor);
-            }
-
-            // Step 6: (omitted in this example) Commit or rollback transaction
-
-        }
-        // Step 7: Close connection (handled implcitly by try-with-resources syntax)
-    }
-
-    // Demo4 - Establish JDBC connection, execute DML query (UPDATE) using
-    // PreparedStatement / transaction
-    private void demo4() throws SQLException {
-
-        // Step 1: Establish connection to RDBMS
-        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
-                System.getenv("L7_JDBC_PW"))) {
-            // Step 2: Construct SQL statement
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Enter a flavor: ");
-            String flavor = scanner.nextLine();
-            System.out.format("Until what date will %s be available (YYYY-MM-DD)? ", flavor);
-            LocalDate availDt = LocalDate.parse(scanner.nextLine());
-
-            String updateSql = "UPDATE hp_goods SET AvailUntil = ? WHERE Flavor = ?";
-
-            // Step 3: Start transaction
-            conn.setAutoCommit(false);
-
-            try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
-
-                // Step 4: Send SQL statement to DBMS
-                pstmt.setDate(1, java.sql.Date.valueOf(availDt));
-                pstmt.setString(2, flavor);
-                int rowCount = pstmt.executeUpdate();
-
-                // Step 5: Handle results
-                System.out.format("Updated %d records for %s pastries%n", rowCount, flavor);
-
-                // Step 6: Commit or rollback transaction
-                conn.commit();
-            } catch (SQLException e) {
-                conn.rollback();
-            }
-
-        }
-        // Step 7: Close connection (handled implcitly by try-with-resources syntax)
-    }
-
-    // Demo5 - Construct a query using PreparedStatement
-    private void demo5() throws SQLException {
-
-        // Step 1: Establish connection to RDBMS
-        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
-                System.getenv("L7_JDBC_PW"))) {
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Find pastries with price <=: ");
-            Double price = Double.valueOf(scanner.nextLine());
-            System.out.print("Filter by flavor (or 'Any'): ");
-            String flavor = scanner.nextLine();
-
-            List<Object> params = new ArrayList<Object>();
-            params.add(price);
-            StringBuilder sb = new StringBuilder("SELECT * FROM hp_goods WHERE price <= ?");
-            if (!"any".equalsIgnoreCase(flavor)) {
-                sb.append(" AND Flavor = ?");
-                params.add(flavor);
-            }
-
-            try (PreparedStatement pstmt = conn.prepareStatement(sb.toString())) {
-                int i = 1;
-                for (Object p : params) {
-                    pstmt.setObject(i++, p);
-                }
-
-                try (ResultSet rs = pstmt.executeQuery()) {
-                    System.out.println("Matching Pastries:");
-                    int matchCount = 0;
-                    while (rs.next()) {
-                        System.out.format("%s %s ($%.2f) %n", rs.getString("Flavor"), rs.getString("Food"),
-                                rs.getDouble("price"));
-                        matchCount++;
-                    }
-                    System.out.format("----------------------%nFound %d match%s %n", matchCount,
-                            matchCount == 1 ? "" : "es");
-                }
-            }
         }
     }
 }
