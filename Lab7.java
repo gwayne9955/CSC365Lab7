@@ -1,4 +1,5 @@
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -64,7 +65,7 @@ public class Lab7 {
             r4();
             break;
         case "r5":
-            System.out.println("Performing R5");
+            r5();
             break;
         case "r6":
             System.out.println("Performing R6");
@@ -159,41 +160,151 @@ public class Lab7 {
     }
 
     private static void r4() throws SQLException {
-      System.out.print("\nPlease enter a reservation code (example: 12345) that you would like to cancel: ");
-      Scanner scanner = new Scanner(System.in);
-      String res = scanner.nextLine().trim();
+        System.out.print("\nPlease enter a reservation code (example: 12345) that you would like to cancel: ");
+        Scanner scanner = new Scanner(System.in);
+        String res = scanner.nextLine().trim();
 
-      System.out.print("Are you sure you want to cancel reservation " + res + "? (Y or N) ");
-      String confirm = scanner.nextLine().trim().toLowerCase();
-      while (!(confirm.equals("y") || confirm.equals("n"))) {
-         System.out.print("Sorry, are you sure you want to cancel reservation " + res + "? (Y or N) ");
-         confirm = scanner.nextLine().trim().toLowerCase();
-      }
-      if (confirm.equals("y")) {
-         try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
-                 System.getenv("L7_JDBC_PW"))) {
-             List<Object> params = new ArrayList<Object>();
-             params.add(res);
-             StringBuilder sb = new StringBuilder("DELETE FROM lab7_reservations WHERE CODE = ?");
-             try (PreparedStatement pstmt = conn.prepareStatement(sb.toString())) {
-                 int i = 1;
-                 for (Object p : params) {
-                     pstmt.setObject(i++, p);
-                 }
-                 int rowCount = pstmt.executeUpdate();
-                 if (rowCount > 0) {
-                    System.out.println("Cancelled reservation " + res + ", " + rowCount + " row(s) affected");
-                 }
-                 else {
-                    System.out.println("No matching records were found with reservation code " + res);
-                 }
-             }
-         }
-      }
-      else {
-         return;
-      }
-   }
+        System.out.print("Are you sure you want to cancel reservation " + res + "? (Y or N) ");
+        String confirm = scanner.nextLine().trim().toLowerCase();
+        while (!(confirm.equals("y") || confirm.equals("n"))) {
+            System.out.print("Sorry, are you sure you want to cancel reservation " + res + "? (Y or N) ");
+            confirm = scanner.nextLine().trim().toLowerCase();
+        }
+        if (confirm.equals("y")) {
+            try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"),
+                    System.getenv("L7_JDBC_USER"), System.getenv("L7_JDBC_PW"))) {
+                List<Object> params = new ArrayList<Object>();
+                params.add(res);
+                StringBuilder sb = new StringBuilder("DELETE FROM lab7_reservations WHERE CODE = ?");
+                try (PreparedStatement pstmt = conn.prepareStatement(sb.toString())) {
+                    int i = 1;
+                    for (Object p : params) {
+                        pstmt.setObject(i++, p);
+                    }
+                    int rowCount = pstmt.executeUpdate();
+                    if (rowCount > 0) {
+                        System.out.println("Cancelled reservation " + res + ", " + rowCount + " row(s) affected");
+                    } else {
+                        System.out.println("No matching records were found with reservation code " + res);
+                    }
+                }
+            }
+        } else {
+            return;
+        }
+    }
+
+    private static void r5() throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        List<Object> params = new ArrayList<Object>();
+        int paramCount = 0;
+        StringBuilder sb = new StringBuilder("SELECT * FROM lab7_reservations");
+
+        System.out.print("\nPlease enter a First name (or leave blank for 'Any'): ");
+        String firstName = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(firstName)) {
+            paramCount++;
+            if (paramCount == 1)
+                sb.append(" WHERE FirstName LIKE ?");
+            params.add(firstName);
+        }
+
+        System.out.print("\nPlease enter a Last name (or leave blank for 'Any'): ");
+        String lastName = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(lastName)) {
+            paramCount++;
+            if (paramCount == 1)
+                sb.append(" WHERE LastName LIKE ?");
+            else
+                sb.append(" AND LastName LIKE ?");
+            params.add(lastName);
+        }
+
+        System.out.print(
+                "\nPlease enter a range of dates (example format: '2019-10-01 to 2019-10-06') (or leave blank for 'Any'): ");
+        String dateRange = scanner.nextLine().trim();
+        String[] dateArr = dateRange.split(" to ");
+        while (!(dateArr.length == 2 || dateRange.equalsIgnoreCase(""))) {
+            System.out.print(
+                    "Sorry, please enter a range of dates (example format: '2019-10-01 to 2019-10-06') (or leave blank for 'Any'): ");
+            dateRange = scanner.nextLine().trim();
+            dateArr = dateRange.split(" to ");
+        }
+        if (!"".equalsIgnoreCase(dateRange)) {
+            paramCount++;
+            if (paramCount == 1)
+                sb.append(" WHERE (CheckIn between ? and ? OR CheckOut between ? and ?)");
+            else
+                sb.append(" AND (CheckIn between ? and ? OR CheckOut between ? and ?)");
+            params.add(dateArr[0]);
+            params.add(dateArr[1]);
+            params.add(dateArr[0]);
+            params.add(dateArr[1]);
+        }
+
+        System.out.print("\nPlease enter a Room code (or leave blank for 'Any'): ");
+        String roomCode = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(roomCode)) {
+            paramCount++;
+            if (paramCount == 1)
+                sb.append(" WHERE Room LIKE ?");
+            else
+                sb.append(" AND Room LIKE ?");
+            params.add(roomCode);
+        }
+
+        System.out.print("\nPlease enter a Reservation code (or leave blank for 'Any'): ");
+        String resCode = scanner.nextLine().trim();
+        if (!"".equalsIgnoreCase(resCode)) {
+            paramCount++;
+            if (paramCount == 1)
+                sb.append(" WHERE CODE LIKE ?");
+            else
+                sb.append(" AND CODE LIKE ?");
+            params.add(resCode);
+        }
+        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
+                System.getenv("L7_JDBC_PW"))) {
+            try (PreparedStatement pstmt = conn.prepareStatement(sb.toString())) {
+                int i = 1;
+                for (Object p : params) {
+                    pstmt.setObject(i++, p);
+                }
+
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    TableGenerator tableGenerator = new TableGenerator();
+                    List<String> headersList = new ArrayList<>();
+                    ResultSetMetaData rsmd = rs.getMetaData();
+                    int columnCount = rsmd.getColumnCount();
+
+                    for (i = 1; i <= columnCount; i++) {
+                        String name = rsmd.getColumnName(i);
+                        headersList.add(name);
+                    }
+
+                    List<List<String>> rowsList = new ArrayList<>();
+
+                    while (rs.next()) {
+                        List<String> row = new ArrayList<>();
+                        for (i = 1; i <= columnCount; i++) {
+                            String name = rsmd.getColumnName(i);
+                            String className = rsmd.getColumnClassName(i);
+                            if (className.equalsIgnoreCase("java.math.BigDecimal")) {
+                                row.add(String.valueOf(rs.getFloat(name)));
+                            } else if (className.equalsIgnoreCase("java.lang.Integer")) {
+                                row.add(String.valueOf((int) rs.getFloat(name)));
+                            } else {
+                                row.add(rs.getString(name));
+                            }
+                        }
+                        rowsList.add(row);
+                    }
+                    System.out.println(tableGenerator.generateTable(headersList, rowsList));
+                }
+            }
+        }
+
+    }
 
     // Demo1 - Establish JDBC connection, execute DDL statement
     private void demo1() throws SQLException {
