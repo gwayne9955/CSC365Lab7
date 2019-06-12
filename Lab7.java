@@ -25,7 +25,7 @@ public class Lab7 {
 
     private static void welcomeUser() {
         System.out.println(
-                "\nWelcome to the Inn Database!\nType in 'Help' for more information on how to use the program\n......................................\n");
+                "Welcome to the Inn Database!\nType in 'Help' for more information on how to use the program\n......................................\n");
     }
 
     private static void getInputs() throws SQLException {
@@ -61,7 +61,7 @@ public class Lab7 {
             System.out.println("Performing R3");
             break;
         case "r4":
-            System.out.println("Performing R4");
+            r4();
             break;
         case "r5":
             System.out.println("Performing R5");
@@ -158,6 +158,43 @@ public class Lab7 {
         }
     }
 
+    private static void r4() throws SQLException {
+      System.out.print("\nPlease enter a reservation code (example: 12345) that you would like to cancel: ");
+      Scanner scanner = new Scanner(System.in);
+      String res = scanner.nextLine().trim();
+
+      System.out.print("Are you sure you want to cancel reservation " + res + "? (Y or N) ");
+      String confirm = scanner.nextLine().trim().toLowerCase();
+      while (!(confirm.equals("y") || confirm.equals("n"))) {
+         System.out.print("Sorry, are you sure you want to cancel reservation " + res + "? (Y or N) ");
+         confirm = scanner.nextLine().trim().toLowerCase();
+      }
+      if (confirm.equals("y")) {
+         try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
+                 System.getenv("L7_JDBC_PW"))) {
+             List<Object> params = new ArrayList<Object>();
+             params.add(res);
+             StringBuilder sb = new StringBuilder("DELETE FROM lab7_reservations WHERE CODE = ?");
+             try (PreparedStatement pstmt = conn.prepareStatement(sb.toString())) {
+                 int i = 1;
+                 for (Object p : params) {
+                     pstmt.setObject(i++, p);
+                 }
+                 int rowCount = pstmt.executeUpdate();
+                 if (rowCount > 0) {
+                    System.out.println("Cancelled reservation " + res + ", " + rowCount + " row(s) affected");
+                 }
+                 else {
+                    System.out.println("No matching records were found with reservation code " + res);
+                 }
+             }
+         }
+      }
+      else {
+         return;
+      }
+   }
+
     // Demo1 - Establish JDBC connection, execute DDL statement
     private void demo1() throws SQLException {
 
@@ -229,7 +266,7 @@ public class Lab7 {
             stmt.addBatch(reservationsInsertSql);
             stmt.executeBatch();
 
-            System.out.println("Successfully setup Room and Reservations tables");
+            System.out.println("Successfully setup Room and Reservations tables\n");
         }
     }
 
