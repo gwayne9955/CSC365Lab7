@@ -69,7 +69,7 @@ public class Lab7 {
             r5();
             break;
         case "r6":
-            System.out.println("Performing R6");
+            r6();
             break;
         default:
             System.out.println("Wrongly formatted expression");
@@ -627,6 +627,145 @@ public class Lab7 {
                     }
                     System.out.println(tableGenerator.generateTable(headersList, rowsList));
                 }
+            }
+        }
+    }
+    
+    
+        private static void r6() throws SQLException {
+        try (Connection conn = DriverManager.getConnection(System.getenv("L7_JDBC_URL"), System.getenv("L7_JDBC_USER"),
+                System.getenv("L7_JDBC_PW"))) {
+
+            String sql = "select
+roomName,
+round(sum((case
+    when (checkout like "2019-01-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+))) as m1 ,
+round(sum((case
+    when (checkout like "2019-02-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)) ) as m2,
+round(sum((case
+    when (checkout like "2019-03-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as m3,
+round(sum((case
+    when (checkout like "2019-04-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as m4,
+round(sum((case
+    when (checkout like "2019-05-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)) ) as m5,
+round(sum((case
+    when (checkout like "2019-06-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as m6,
+round(sum((case
+    when (checkout like "2019-07-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)) ) as m7,
+round(sum((case
+    when (checkout like "2019-08-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as m8,
+round(sum((case
+    when (checkout like "2019-09-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as m9,
+round(sum((case
+    when (checkout like "2019-10-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as m10,
+round(sum((case
+    when (checkout like "2019-11-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)) ) as m11,
+round(sum((case
+    when (checkout like "2019-12-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as m12,
+
+round(sum((case
+    when (checkout like "2019-%")
+    then datediff(checkout,checkin)*rate
+    else 0
+    end
+)))  as Year
+
+
+from lab7_reservations
+inner join
+lab7_rooms
+on room =roomcode
+
+group by room;";
+
+            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+                TableGenerator tableGenerator = new TableGenerator();
+
+                List<String> headersList = new ArrayList<>();
+                headersList.add("Roomname");
+                headersList.add("January");
+                headersList.add("February");
+                headersList.add("March");
+                headersList.add("April");
+                headersList.add("May");
+                headersList.add("June");
+                headersList.add("July");
+                headersList.add("August");
+                headersList.add("September");
+                headersList.add("October");
+				headersList.add("November");
+				headersList.add("December");
+                headersList.add("Year");
+
+
+                List<List<String>> rowsList = new ArrayList<>();
+
+                while (rs.next()) {
+                    List<String> row = new ArrayList<>();
+                    row.add(rs.getString("roomName"));
+                    row.add(rs.getString("m1"));
+					row.add(rs.getString("m2"));
+                    row.add(rs.getString("m3"));
+					row.add(rs.getString("m4"));
+                    row.add(rs.getString("m5"));
+					row.add(rs.getString("m6"));
+                    row.add(rs.getString("m7"));
+					row.add(rs.getString("m8"));
+                    row.add(rs.getString("m9"));
+					row.add(rs.getString("m10"));
+                    row.add(rs.getString("m11"));
+					row.add(rs.getString("m12"));
+					row.add(rs.getString("Year"));					
+				}
+                System.out.println(tableGenerator.generateTable(headersList, rowsList));
             }
         }
     }
