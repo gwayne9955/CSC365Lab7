@@ -1,4 +1,4 @@
-# CSC365Lab7
+# MySQL Java Database
 CSC 365 Lab 7
 
 Garrett Wayne, Jeremy Whorton, Logan Anderson
